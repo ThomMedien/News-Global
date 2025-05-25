@@ -257,9 +257,33 @@
 
         /**
          * Applies the current zoom and pan levels to the scalable content using CSS transform.
+         * Clamps pan values to keep content within viewport.
          */
         function applyTransform() {
-            // Combine scale and translate transforms
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            // Get the base dimensions of the scalable content (before any transform)
+            const baseContentWidth = scalableContent.offsetWidth;
+            const baseContentHeight = scalableContent.offsetHeight;
+
+            // Calculate the scaled dimensions
+            const scaledContentWidth = baseContentWidth * currentZoom;
+            const scaledContentHeight = baseContentHeight * currentZoom;
+
+            // Calculate the maximum allowed absolute translation from the center
+            // This ensures a portion of the map is always visible.
+            // We use a small buffer (e.g., 10px) to ensure *some* part is always visible.
+            const buffer = 10;
+
+            let maxPanX_abs = Math.max(0, (scaledContentWidth - viewportWidth) / 2 + buffer);
+            let maxPanY_abs = Math.max(0, (scaledContentHeight - viewportHeight) / 2 + buffer);
+
+            // Clamp panX
+            panX = Math.max(Math.min(panX, maxPanX_abs), -maxPanX_abs);
+            // Clamp panY
+            panY = Math.max(Math.min(panY, maxPanY_abs), -maxPanY_abs);
+
             scalableContent.style.transform = `scale(${currentZoom}) translate(${panX}px, ${panY}px)`;
             scalableContent.style.transformOrigin = 'center center';
         }
@@ -285,38 +309,38 @@
         });
 
         /**
-         * Moves the map up when the up button is clicked.
+         * Moves the map up when the up button is clicked (visually moves globe up).
          */
         moveUpBtn.addEventListener('click', () => {
-            panY += panStep; // Changed to increase Y to move the *screen* up (content moves down)
+            panY += panStep; // Increases Y to move globe UP
             applyTransform();
         });
 
         /**
-         * Moves the map down when the down button is clicked.
+         * Moves the map down when the down button is clicked (visually moves globe down).
          */
         moveDownBtn.addEventListener('click', () => {
-            panY -= panStep; // Changed to decrease Y to move the *screen* down (content moves up)
+            panY -= panStep; // Decreases Y to move globe DOWN
             applyTransform();
         });
 
         /**
-         * Moves the map left when the left button is clicked.
+         * Moves the map left when the left button is clicked (visually moves globe left).
          */
         moveLeftBtn.addEventListener('click', () => {
-            panX += panStep; // Changed to increase X to move the *screen* left (content moves right)
+            panX += panStep; // Increases X to move globe LEFT
             applyTransform();
         });
 
         /**
-         * Moves the map right when the right button is clicked.
+         * Moves the map right when the right button is clicked (visually moves globe right).
          */
         moveRightBtn.addEventListener('click', () => {
-            panX -= panStep; // Changed to decrease X to move the *screen* right (content moves left)
+            panX -= panStep; // Decreases X to move globe RIGHT
             applyTransform();
         });
 
-        // Reset zoom and pan on window resize
+        // Reset zoom and pan on window resize and apply transform
         window.addEventListener('resize', () => {
             currentZoom = 1; // Reset zoom to original size
             panX = 0; // Reset horizontal pan
