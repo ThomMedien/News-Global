@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Globe Project</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* Apply Inter font and basic styling to the body */
+        body {
+            font-family: 'Inter', sans-serif; /* Default font for the body */
+            display: flex;
+            flex-direction: column; /* Stack content vertically */
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Ensure it takes full viewport height */
+            background-color: #383838; /* Dark grey background color */
+            margin: 0;
+            padding: 20px; /* Add some padding around the content */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+            overflow: hidden; /* Prevent body scroll if content scales out */
+        }
+
+        /* This container will now hold only the title and SVG, and will be the element that scales */
+        .scalable-content {
+            display: flex;
+            flex-direction: column; /* Stack title above image */
+            align-items: center; /* Center title and image horizontally */
+            max-width: 120%; /* Increased max-width to take up more screen space */
+            width: 1800px; /* Increased fixed width for larger screens */
+            /* Add transition for smooth scaling and panning of this entire container */
+            transition: transform 0.1s ease-out;
+            transform-origin: center center;
+        }
+
+        /* Styling for the title */
+        .title-container {
+            color: #ffffff; /* White text for contrast */
+            font-size: 3.5rem; /* Large font size for prominence */
+            font-weight: 700; /* Bold font weight */
+            letter-spacing: 0.8rem; /* Spaced out font */
+            text-align: center; /* Center the text */
+            margin-bottom: 1rem; /* Space between title and image */
+            max-width: 700px; /* Slightly less wide than the image's max width */
+            width: 90%; /* Responsive width */
+            text-transform: uppercase; /* Optional: make it all caps */
+            border-radius: 0.5rem; /* Slightly rounded corners */
+            padding: 0.5rem 1rem; /* Some padding around the title */
+            box-sizing: border-box; /* Include padding in width */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Added drop shadow to the text */
+            font-family: 'Montserrat', sans-serif; /* Changed font specifically for the title */
+            margin-left: 50px; /* Moved title 50px to the right */
+        }
+
+        /* Wrapper for the SVG to control its relative positioning */
+        .svg-wrapper {
+            position: relative; /* Establish positioning context for absolute children (like potential future overlays) */
+            width: 100%; /* Take full width of scalable-content */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Styling for the container holding the SVG */
+        .svg-container {
+            background-color: transparent; /* Make the container background transparent */
+            border-radius: 1rem; /* Rounded corners */
+            padding: 3rem; /* Increased inner padding */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%; /* Fill the svg-wrapper */
+            height: auto; /* Maintain aspect ratio */
+            box-sizing: border-box; /* Include padding in width */
+        }
+
+        /* Styling for the SVG image */
+        .svg-container img {
+            max-width: 100%; /* Ensure the SVG scales down to fit its container */
+            height: auto; /* Maintain aspect ratio */
+            display: block; /* Remove extra space below image */
+            border-radius: 0.5rem; /* Slightly rounded corners for the image itself */
+        }
+
+        /* Container for both zoom and pan buttons */
+        .controls-container {
+            position: fixed; /* Fixed position relative to the viewport */
+            bottom: 40px; /* Distance from the bottom of the viewport */
+            right: 40px; /* Distance from the right of the viewport */
+            display: flex;
+            flex-direction: column; /* Stack pan above zoom */
+            gap: 20px; /* Space between pan and zoom groups */
+            z-index: 100; /* Ensure buttons are on top of everything */
+        }
+
+        /* Styling for pan buttons (directional pad) */
+        .pan-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3 columns for left, center (empty), right */
+            grid-template-rows: repeat(3, 1fr); /* 3 rows for up, center (empty), down */
+            gap: 5px; /* Smaller gap within D-pad */
+            width: 120px; /* Fixed width for the D-pad area */
+            height: 120px; /* Fixed height for the D-pad area */
+            justify-items: center; /* Center buttons within grid cells */
+            align-items: center; /* Center buttons within grid cells */
+        }
+
+        .pan-buttons button {
+            background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white */
+            color: #ffffff; /* White text */
+            border: none;
+            border-radius: 0.5rem; /* Rounded corners */
+            padding: 0.75rem 1rem; /* Padding for button size */
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Subtle shadow for buttons */
+            width: 40px; /* Make buttons square */
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Specific grid placement for pan buttons to form a D-pad */
+        #moveUpBtn { grid-column: 2; grid-row: 1; }
+        #moveLeftBtn { grid-column: 1; grid-row: 2; }
+        #moveRightBtn { grid-column: 3; grid-row: 2; }
+        #moveDownBtn { grid-column: 2; grid-row: 3; }
+
+        /* Styling for zoom buttons */
+        .zoom-buttons {
+            display: flex;
+            gap: 10px; /* Space between buttons */
+            justify-content: center; /* Center zoom buttons below D-pad */
+        }
+
+        .zoom-buttons button {
+            background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white */
+            color: #ffffff; /* White text */
+            border: none;
+            border-radius: 0.5rem; /* Rounded corners */
+            padding: 0.75rem 1rem; /* Padding for button size */
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Subtle shadow for buttons */
+        }
+
+        .zoom-buttons button:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px); /* Slight lift effect on hover */
+        }
+
+        .zoom-buttons button:active {
+            background-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(0); /* Press down effect */
+        }
+
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            .title-container {
+                font-size: 2.5rem;
+                letter-spacing: 0.6rem;
+                margin-bottom: 0.75rem;
+            }
+            .svg-container {
+                padding: 1.5rem;
+            }
+            .controls-container {
+                bottom: 20px; /* Adjust for smaller screens */
+                right: 20px; /* Adjust for smaller screens */
+                gap: 15px;
+            }
+            .pan-buttons {
+                width: 100px;
+                height: 100px;
+            }
+            .pan-buttons button {
+                padding: 0.6rem 0.8rem;
+                font-size: 1rem;
+                width: 35px;
+                height: 35px;
+            }
+            .zoom-buttons button {
+                padding: 0.6rem 0.8rem;
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .title-container {
+                font-size: 1.8rem;
+                letter-spacing: 0.4rem;
+                margin-bottom: 0.5rem;
+            }
+            .svg-container {
+                padding: 1rem;
+            }
+            body {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="scalable-content" id="scalableContent">
+        <div class="title-container">
+            <h1> NEWS GLOBAL</h1>
+        </div>
+        <div class="svg-wrapper">
+            <div class="svg-container">
+                <img id="worldSvg" src="world.svg" alt="World Globe Illustration">
+            </div>
+        </div>
+    </div>
+
+    <div class="controls-container">
+        <div class="pan-buttons">
+            <button id="moveUpBtn" class="pan-button">↑</button>
+            <button id="moveLeftBtn" class="pan-button">←</button>
+            <button id="moveRightBtn" class="pan-button">→</button>
+            <button id="moveDownBtn" class="pan-button">↓</button>
+        </div>
+        <div class="zoom-buttons">
+            <button id="zoomInBtn">+</button>
+            <button id="zoomOutBtn">-</button>
+        </div>
+    </div>
+
+    <script>
+        // Get references to the scalable content container and control buttons
+        const scalableContent = document.getElementById('scalableContent');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const moveUpBtn = document.getElementById('moveUpBtn');
+        const moveDownBtn = document.getElementById('moveDownBtn');
+        const moveLeftBtn = document.getElementById('moveLeftBtn');
+        const moveRightBtn = document.getElementById('moveRightBtn');
+
+        // Initial zoom and pan levels
+        let currentZoom = 1;
+        let panX = 0; // Horizontal pan
+        let panY = 0; // Vertical pan
+
+        // Step values for zoom and pan
+        const zoomStep = 0.2;
+        const panStep = 50; // Pixels to move per click
+
+        // Maximum and minimum zoom levels
+        const maxZoom = 3;
+        const minZoom = 1;
+
+        /**
+         * Applies the current zoom and pan levels to the scalable content using CSS transform.
+         */
+        function applyTransform() {
+            // Combine scale and translate transforms
+            scalableContent.style.transform = `scale(${currentZoom}) translate(${panX}px, ${panY}px)`;
+            scalableContent.style.transformOrigin = 'center center';
+        }
+
+        /**
+         * Increases the zoom level when the zoom-in button is clicked.
+         */
+        zoomInBtn.addEventListener('click', () => {
+            if (currentZoom < maxZoom) {
+                currentZoom += zoomStep;
+                applyTransform();
+            }
+        });
+
+        /**
+         * Decreases the zoom level when the zoom-out button is clicked.
+         */
+        zoomOutBtn.addEventListener('click', () => {
+            if (currentZoom > minZoom) {
+                currentZoom -= zoomStep;
+                applyTransform();
+            }
+        });
+
+        /**
+         * Moves the map up when the up button is clicked.
+         */
+        moveUpBtn.addEventListener('click', () => {
+            panY += panStep; // Changed to increase Y to move the *screen* up (content moves down)
+            applyTransform();
+        });
+
+        /**
+         * Moves the map down when the down button is clicked.
+         */
+        moveDownBtn.addEventListener('click', () => {
+            panY -= panStep; // Changed to decrease Y to move the *screen* down (content moves up)
+            applyTransform();
+        });
+
+        /**
+         * Moves the map left when the left button is clicked.
+         */
+        moveLeftBtn.addEventListener('click', () => {
+            panX += panStep; // Changed to increase X to move the *screen* left (content moves right)
+            applyTransform();
+        });
+
+        /**
+         * Moves the map right when the right button is clicked.
+         */
+        moveRightBtn.addEventListener('click', () => {
+            panX -= panStep; // Changed to decrease X to move the *screen* right (content moves left)
+            applyTransform();
+        });
+
+        // Reset zoom and pan on window resize
+        window.addEventListener('resize', () => {
+            currentZoom = 1; // Reset zoom to original size
+            panX = 0; // Reset horizontal pan
+            panY = 0; // Reset vertical pan
+            applyTransform();
+        });
+
+        // Initial application of transform when the page loads
+        applyTransform();
+    </script>
+</body>
+</html>
