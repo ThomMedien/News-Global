@@ -77,10 +77,13 @@
     cursor: pointer;
 }
 
-/* This will apply to ALL countries with a class */
-svg path[class]:hover {
-    fill: #50030a;
-        }
+/* Selected/highlighted country */
+path.selected {
+  fill: gray !important;
+  stroke: white;
+  stroke-width: 3;
+}
+
 
         .controls-container {
             position: fixed;
@@ -223,7 +226,9 @@ svg path[class]:hover {
             stroke-width: 3;
             fill: rgb(90, 90, 90);
         }
-    </style>
+        svg path:hover {
+  fill: #50030a !important;
+}   </style>
 </head>
 <body>
 
@@ -812,44 +817,75 @@ svg path[class]:hover {
       path.setAttribute('title', countryName);
     }
   });
-</script>
+document.addEventListener("DOMContentLoaded", function () {
+  const paths = document.querySelectorAll('svg path');
+  const sidebar = document.getElementById('sidebar');
+  const container = document.querySelector('.scalable-content');
 
-<!-- Script: Handle sidebar and highlight on click -->
-<script>
-  // Ensure DOM is fully loaded before accessing elements
-  document.addEventListener("DOMContentLoaded", function () {
-    const paths = document.querySelectorAll('svg path');
-    const sidebar = document.getElementById('sidebar');
-    const container = document.querySelector('.scalable-content');
+  // Group all paths by country name
+  const countryMap = new Map();
 
-    console.log("Sidebar:", sidebar); // Should NOT be null
-    console.log("Paths found:", paths.length); // Should be > 0
+  paths.forEach(path => {
+    let countryName = null;
 
-    paths.forEach(path => {
-      path.addEventListener('click', function () {
-        paths.forEach(p => p.classList.remove('highlighted'));
-        this.classList.add('highlighted');
+    if (path.classList.length > 0) {
+      countryName = path.classList[0];
+    } else {
+      countryName = path.getAttribute('name');
+    }
 
-        if (sidebar) sidebar.classList.add('open');
-        if (container) container.classList.add('shifted');
+    if (!countryName) return;
+    countryName = countryName.trim();
 
-        if (sidebar)
-          sidebar.innerHTML = `<h2>${this.id || this.className.baseVal}</h2>`;
-      });
-    });
+    if (!countryMap.has(countryName)) {
+      countryMap.set(countryName, []);
+    }
+    countryMap.get(countryName).push(path);
+  });
 
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('path') && !e.target.closest('#sidebar')) {
-        if (sidebar) sidebar.classList.remove('open');
-        if (container) container.classList.remove('shifted');
-        paths.forEach(p => p.classList.remove('highlighted'));
+  // Handle clicks
+  paths.forEach(path => {
+    path.addEventListener('click', function () {
+      let clickedCountry = null;
+
+      if (path.classList.length > 0) {
+        clickedCountry = path.classList[0];
+      } else {
+        clickedCountry = path.getAttribute('name');
+      }
+
+      if (!clickedCountry) return;
+      clickedCountry = clickedCountry.trim();
+
+      // Remove previous selections
+      document.querySelectorAll('path.selected').forEach(p => p.classList.remove('selected'));
+
+      // Highlight all parts of the selected country
+      const countryPaths = countryMap.get(clickedCountry);
+      if (countryPaths) {
+        countryPaths.forEach(p => p.classList.add('selected'));
+      }
+
+      // Update sidebar
+      if (sidebar) {
+        sidebar.innerHTML = `<h2>${clickedCountry}</h2>`;
+        sidebar.classList.add('open');
+      }
+      if (container) {
+        container.classList.add('shifted');
       }
     });
   });
+
+  // Optional: Deselect on outside click
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('path') && !e.target.closest('#sidebar')) {
+      document.querySelectorAll('path.selected').forEach(p => p.classList.remove('selected'));
+      if (sidebar) sidebar.classList.remove('open');
+      if (container) container.classList.remove('shifted');
+    }
+  });
+});
 </script>
-
-</body>
-</html>
-
 </body>
 </html>
