@@ -828,13 +828,14 @@ document.addEventListener("DOMContentLoaded", function () {
   paths.forEach(path => {
     let countryName = null;
 
-    if (path.classList.length > 0) {
-      countryName = path.classList[0];
-    } else {
-      countryName = path.getAttribute('name');
-    }
+// Try to get full name from class (assumes class="Full Country Name")
+if (path.classList.length > 0) {
+    countryName = [...path.classList].join(" "); // Joins all class parts as full name
+} else {
+    countryName = path.getAttribute('name'); // Fallback to name attribute
+}
 
-    if (!countryName) return;
+if (!countryName) return;
     countryName = countryName.trim();
 
     if (!countryMap.has(countryName)) {
@@ -847,12 +848,11 @@ document.addEventListener("DOMContentLoaded", function () {
   paths.forEach(path => {
     path.addEventListener('click', function () {
       let clickedCountry = null;
-
-      if (path.classList.length > 0) {
-        clickedCountry = path.classList[0];
-      } else {
-        clickedCountry = path.getAttribute('name');
-      }
+if (path.classList.length > 0) {
+    clickedCountry = [...path.classList].join(" ");
+} else {
+    clickedCountry = path.getAttribute('name');
+}
 
       if (!clickedCountry) return;
       clickedCountry = clickedCountry.trim();
