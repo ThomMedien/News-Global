@@ -7,7 +7,13 @@
     <script src="https://cdn.tailwindcss.com "></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter :wght@400;600;700&family=Montserrat:wght@700&display=swap" rel="stylesheet">
     <style>
-        body {
+        svg {
+    pointer-events: none;
+}        body {
+    svg path {
+    pointer-events: auto;
+    cursor: pointer;
+}
             font-family: 'Inter', sans-serif;
             display: flex;
             flex-direction: column;
@@ -245,7 +251,7 @@ path.selected {
             fill: rgb(90, 90, 90);
         }
         svg path:hover {
-  fill: #0a2402 !important;
+  fill: #ffebeb !important;
 }
 
         /* Base styles */
@@ -841,7 +847,8 @@ path.selected {
         });
 
         applyTransform();
-    </script>
+    </script> 
+    
 <!-- Sidebar -->
 <div id="sidebar">
   <h2>Country Info</h2>
@@ -945,8 +952,81 @@ function closeSidebar() {
   // Unhighlight selected country
   document.querySelectorAll('path.selected').forEach(p => p.classList.remove('selected'));
 }
+// Scroll to Zoom
+scalableContent.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+    currentZoom *= zoomFactor;
 
+    // Clamp zoom level
+    currentZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom));
+
+    applyTransform();
+});
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const scalableContent = document.getElementById('scalableContent');
+    if (!scalableContent) {
+        console.warn("Element '#scalableContent' not found!");
+        return;
+    }
+
+    let isDragging = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    // DRAG TO PAN
+    scalableContent.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        lastX = e.clientX;
+        lastY = e.clientY;
+        scalableContent.style.cursor = 'grabbing';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const deltaX = e.clientX - lastX;
+        const deltaY = e.clientY - lastY;
+        panX += deltaX;
+        panY += deltaY;
+        lastX = e.clientX;
+        lastY = e.clientY;
+        applyTransform();
+    });
+
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+        scalableContent.style.cursor = 'grab';
+    });
+
+    // TOUCH SUPPORT (optional but recommended)
+    scalableContent.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            isDragging = true;
+            const touch = e.touches[0];
+            lastX = touch.clientX;
+            lastY = touch.clientY;
+        }
+    });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        e.preventDefault(); // Prevent scrolling
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - lastX;
+        const deltaY = touch.clientY - lastY;
+        panX += deltaX;
+        panY += deltaY;
+        lastX = touch.clientX;
+        lastY = touch.clientY;
+        applyTransform();
+    });
+
+    document.addEventListener('touchend', () => {
+        isDragging = false;
+    });
+});
 </script>
 </body>
 </html>
