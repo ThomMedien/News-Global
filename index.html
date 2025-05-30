@@ -208,18 +208,21 @@ path.selected {
             }
         }
            #sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 300px;
-            height: 100%;
-            background: rgba(50,50,50,0.9);
-            transform: translateX(-100%);
-            transition: transform 0.3s;
-            z-index: 1000;
-            padding: 20px;
-            color: white;
-        }
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 300px;
+    height: 100%;
+    background: rgba(50, 50, 50, 0.9);
+    transform: translateX(-100%);
+    transition: transform 0.3s;
+    z-index: 1000;
+    padding: 20px;
+    color: white;
+    overflow-y: auto; /* <-- make scrollable */
+    box-sizing: border-box;
+}
+
 
         #sidebar .close-btn {
             position: absolute;
@@ -1028,5 +1031,52 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 </script>
+<script>
+const apiKey = "93577f4a4814513f470df025199ce717";
+const sidebar = document.getElementById('sidebar');
+
+// Load news on country click
+document.querySelectorAll('svg path').forEach(path => {
+    path.addEventListener('click', async (e) => {
+        const countryName = e.target.getAttribute('name') || e.target.getAttribute('id');
+        if (!countryName) return;
+
+        // Visual feedback
+        document.querySelectorAll('svg path').forEach(p => p.classList.remove('selected'));
+        e.target.classList.add('selected');
+
+        // Fetch news
+        const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(countryName)}&lang=en&token=${apiKey}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        // Build article HTML
+        let content = `<button class="close-btn" onclick="toggleSidebar(false)">×</button>`;
+        content += `<h2 class="text-xl font-bold mb-4">${countryName} News</h2>`;
+        if (data.articles && data.articles.length > 0) {
+            data.articles.slice(0, 5).forEach(article => {
+                content += `
+                    <div class="mb-4">
+                        <a href="${article.url}" target="_blank" class="text-blue-400 font-semibold hover:underline">${article.title}</a>
+                        <p class="text-sm text-gray-300">${article.description || ''}</p>
+                    </div>`;
+            });
+        } else {
+            content += `<p>No news found for this country.</p>`;
+        }
+
+        sidebar.innerHTML = content;
+        toggleSidebar(true);
+    });
+});
+
+function toggleSidebar(open) {
+    const sidebar = document.getElementById("sidebar");
+    const content = document.getElementById("scalableContent");
+    sidebar.classList.toggle("open", open);
+    content.classList.toggle("shifted", open);
+}
+</script>
+
 </body>
 </html>
