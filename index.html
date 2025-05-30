@@ -208,21 +208,18 @@ path.selected {
             }
         }
            #sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 300px;
-    height: 100%;
-    background: rgba(50, 50, 50, 0.9);
-    transform: translateX(-100%);
-    transition: transform 0.3s;
-    z-index: 1000;
-    padding: 20px;
-    color: white;
-    overflow-y: auto; /* <-- make scrollable */
-    box-sizing: border-box;
-}
-
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 300px;
+            height: 100%;
+            background: rgba(50,50,50,0.9);
+            transform: translateX(-100%);
+            transition: transform 0.3s;
+            z-index: 1000;
+            padding: 20px;
+            color: white;
+        }
 
         #sidebar .close-btn {
             position: absolute;
@@ -1038,7 +1035,10 @@ const sidebar = document.getElementById('sidebar');
 // Load news on country click
 document.querySelectorAll('svg path').forEach(path => {
     path.addEventListener('click', async (e) => {
-        const countryName = e.target.getAttribute('name') || e.target.getAttribute('id');
+        const countryName = e.target.getAttribute('name') || 
+                    e.target.getAttribute('id') || 
+                    e.target.getAttribute('class') || 
+                    'Unknown';
         if (!countryName) return;
 
         // Visual feedback
